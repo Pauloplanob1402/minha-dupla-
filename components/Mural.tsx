@@ -82,9 +82,26 @@ export default function Mural() {
 
   async function toparDupla(intention: Intention) {
     if (!userId || connectingId) return
-    setConnectingId(intention.id)
 
     const supabase = createClient()
+
+    // Se essa pessoa nunca postou nada e ainda está com o nome padrão,
+    // pergunta o nome agora — senão ela aparece como "Visitante" pra
+    // sempre na sala e no card de conquista.
+    const { data: myProfile } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', userId)
+      .single()
+
+    if (!myProfile?.display_name || myProfile.display_name === 'Visitante') {
+      const typedName = window.prompt('Antes de topar, como você quer ser chamado?')
+      if (typedName && typedName.trim()) {
+        await supabase.from('profiles').update({ display_name: typedName.trim() }).eq('id', userId)
+      }
+    }
+
+    setConnectingId(intention.id)
 
     // 1. Marca a intenção como "matched" (some do mural pra quem chegar depois)
     const { error: updateError } = await supabase
@@ -144,13 +161,22 @@ export default function Mural() {
     setPosting(true)
 
     const supabase = createClient()
+    const trimmedName = formName.trim() || 'Visitante'
+
     const { error } = await supabase.from('intentions').insert({
       user_id: userId,
       choice: formChoice,
       message: formMessage.trim(),
-      display_name: formName.trim() || 'Visitante',
+      display_name: trimmedName,
       city: null,
     })
+
+    // Salva o nome no perfil também, não só nesse pedido — é o que faz o
+    // nome aparecer certo depois, na sala e no card de conquista, em vez
+    // de sempre cair no "Visitante" padrão.
+    if (trimmedName !== 'Visitante') {
+      await supabase.from('profiles').update({ display_name: trimmedName }).eq('id', userId)
+    }
 
     if (error) {
       console.error('Erro ao postar intenção:', error.message)

@@ -39,9 +39,11 @@ export default function Hero({ onSelect }: { onSelect?: (choice: IntentChoice | 
             <span className="text-xs font-medium text-zinc-300">
               {liveCount === null
                 ? 'Carregando...'
-                : liveCount > 0
-                ? `${liveCount} ${liveCount === 1 ? 'pessoa buscando' : 'pessoas buscando'} dupla agora`
-                : 'Você é um dos primeiros por aqui — chama alguém pra topar'}
+                : liveCount === 0
+                ? 'Você é um dos primeiros por aqui — chama alguém pra topar'
+                : liveCount < 5
+                ? 'Fase Beta — seja um dos pioneiros a testar o DUOS hoje'
+                : `${liveCount} pessoas buscando dupla agora`}
             </span>
           </div>
 
