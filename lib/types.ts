@@ -36,5 +36,6 @@ export type Message = {
   room_id: string
   user_id: string
   content: string
+  message_type: 'text' | 'image' | 'video'
   created_at: string
 }

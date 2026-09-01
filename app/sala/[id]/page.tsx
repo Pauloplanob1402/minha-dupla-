@@ -1,12 +1,41 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAnonAuth } from '@/lib/supabase/useAnonAuth'
 import type { Message, Room } from '@/lib/types'
 
 const QUICK_EMOJIS = ['👍', '😂', '🔥', '❤️', '🎉', '👀']
+const MAX_FILE_SIZE_MB = 15
+const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+)/g
+
+function isUrl(str: string) {
+  return /^https?:\/\/[^\s]+$/.test(str)
+}
+
+function Linkified({ text }: { text: string }) {
+  const parts = text.split(URL_SPLIT_REGEX)
+  return (
+    <>
+      {parts.map((part, i) =>
+        isUrl(part) ? (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline break-all"
+          >
+            {part}
+          </a>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  )
+}
 
 function formatCountdown(msLeft: number) {
   if (msLeft <= 0) return '00:00'
@@ -113,10 +142,48 @@ export default function RoomPage() {
     supabase.from('rooms').update({ status: 'completed' }).eq('id', room.id).eq('status', 'active')
   }, [isOver, room])
 
-  async function sendMessage(content: string) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  async function sendMessage(content: string, messageType: 'text' | 'image' | 'video' = 'text') {
     if (!userId || !content.trim() || isOver) return
     const supabase = createClient()
-    await supabase.from('messages').insert({ room_id: roomId, user_id: userId, content: content.trim() })
+    await supabase
+      .from('messages')
+      .insert({ room_id: roomId, user_id: userId, content: content.trim(), message_type: messageType })
+  }
+
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // permite escolher o mesmo arquivo de novo depois
+    if (!file || !userId || isOver) return
+
+    setUploadError(null)
+
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      setUploadError('Só dá pra enviar imagem ou vídeo.')
+      return
+    }
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      setUploadError(`Arquivo muito grande (máximo ${MAX_FILE_SIZE_MB}MB).`)
+      return
+    }
+
+    setUploading(true)
+    const supabase = createClient()
+    const path = `${roomId}/${crypto.randomUUID()}-${file.name}`
+
+    const { error: uploadErr } = await supabase.storage.from('chat-media').upload(path, file)
+    if (uploadErr) {
+      setUploadError('Não deu pra enviar o arquivo. Tenta de novo.')
+      setUploading(false)
+      return
+    }
+
+    const { data: publicUrlData } = supabase.storage.from('chat-media').getPublicUrl(path)
+    const messageType = file.type.startsWith('video/') ? 'video' : 'image'
+    await sendMessage(publicUrlData.publicUrl, messageType)
+    setUploading(false)
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -187,15 +254,29 @@ export default function RoomPage() {
           const mine = m.user_id === userId
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                  mine
-                    ? 'cta-gradient text-white rounded-br-sm'
-                    : 'bg-surface2 text-zinc-100 border border-white/10 rounded-bl-sm'
-                }`}
-              >
-                {m.content}
-              </div>
+              {m.message_type === 'image' ? (
+                <img
+                  src={m.content}
+                  alt="Imagem enviada no chat"
+                  className="max-w-[75%] rounded-2xl border border-white/10"
+                />
+              ) : m.message_type === 'video' ? (
+                <video
+                  src={m.content}
+                  controls
+                  className="max-w-[75%] rounded-2xl border border-white/10"
+                />
+              ) : (
+                <div
+                  className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
+                    mine
+                      ? 'cta-gradient text-white rounded-br-sm'
+                      : 'bg-surface2 text-zinc-100 border border-white/10 rounded-bl-sm'
+                  }`}
+                >
+                  <Linkified text={m.content} />
+                </div>
+              )}
             </div>
           )
         })}
@@ -203,6 +284,7 @@ export default function RoomPage() {
       </div>
 
       <div className="pb-5">
+        {uploadError && <p className="text-xs text-red-400 mb-2">{uploadError}</p>}
         <div className="flex gap-2 mb-2">
           {QUICK_EMOJIS.map((emoji) => (
             <button
@@ -218,6 +300,20 @@ export default function RoomPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex gap-2">
+          <label
+            className={`shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-surface2 border border-white/10 cursor-pointer hover:border-white/30 transition-colors ${
+              isOver || uploading ? 'opacity-40 pointer-events-none' : ''
+            }`}
+          >
+            <input
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={isOver || uploading}
+            />
+            {uploading ? '⏳' : '📎'}
+          </label>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
