@@ -77,22 +77,23 @@ Supabase manda um link mágico; ao clicar, a sessão anônima vira permanente
 com o **mesmo user_id** — ou seja, os Vibe Points e o histórico continuam
 lá, só que agora atrelados a um e-mail de verdade.
 
-## 5. Habilitar o áudio da sala (Daily.co)
+## 5. Áudio da sala (Jitsi Meet — grátis, sem conta, sem cartão)
 
-1. Crie uma conta grátis em [daily.co](https://daily.co) (10.000 minutos de
-   participante grátis por mês, sem cartão de crédito).
-2. Vá em **Developers** no painel do Daily e copie a **API Key**.
-3. Adicione essa chave como `DAILY_API_KEY` no seu `.env.local` (local) e
-   nas Environment Variables da Vercel (produção) — **sem** o prefixo
-   `NEXT_PUBLIC_`, já que ela precisa ficar só no servidor.
-4. Redeploy na Vercel depois de adicionar a variável lá.
+Não precisa configurar nada. O botão "🎧 Entrar na chamada" na página da
+sala abre uma aba nova em `meet.jit.si/duos-{id-da-sala}` — o servidor
+público e gratuito do Jitsi Meet. Cada sala do DUOS vira uma sala de
+áudio/vídeo diferente automaticamente (o nome é gerado a partir do id).
 
-Como funciona: quando a página da sala carrega, ela chama a rota
-`/api/daily-room` (que roda no servidor), que cria (ou reaproveita) uma
-sala de áudio no Daily com o mesmo tempo de expiração da sala do DUOS.
-O áudio conecta sozinho, sem precisar clicar em nada — só aparece um
-aviso "Conectando áudio..." que vira "Áudio conectado 🎙️" quando os dois
-estão dentro. O botão ao lado deixa mutar/desmutar o microfone.
+Por que abre em aba nova, e não embutido na própria página: desde 2023,
+o `meet.jit.si` limita chamadas embutidas (iframe) a 5 minutos — menos
+que os 15 minutos da sala do DUOS. Abrindo direto (fora de iframe), não
+tem esse limite.
+
+Se um dia quiser integrar de um jeito mais profissional (áudio dentro da
+própria página, sem aba nova), as opções pagas mais maduras são Daily.co
+ou Agora.io — ambas pedem cartão de crédito cadastrado (mesmo dentro do
+plano grátis, como verificação anti-fraude), mesmo sem cobrar nada dentro
+do limite gratuito.
 
 ## 6. Deploy na Vercel
 
@@ -114,9 +115,13 @@ Isso aqui é a fundação técnica — o schema, o mural, o login por e-mail, o
 Modo Cupido, o chat de texto com fotos/vídeos e o áudio da sala já
 funcionam com dados reais. Ainda faltam, na ordem que eu recomendaria:
 
-- **Vídeo (câmera)**: o Daily já está conectado só em modo áudio
-  (`startVideoOff: true`). Ativar a câmera é só um ajuste de configuração
-  no `AudioCall.tsx` e adicionar o elemento de vídeo na tela.
+- **Vídeo (câmera)**: hoje o link do Jitsi já abre com a câmera desligada
+  por padrão (`startWithVideoMuted=true` na URL) — a pessoa pode ligar
+  manualmente lá dentro se quiser. Pra vídeo automático, é só tirar esse
+  parâmetro da URL em `AudioCall.tsx`.
+- **Áudio embutido na própria página** (sem abrir aba nova): só é possível
+  de graça de novo se um dia você conseguir um cartão pra usar Daily.co ou
+  Agora.io (ver seção 5 acima).
 - **Login por celular/SMS**: precisa de um provedor externo pago (Twilio,
   MessageBird) configurado em Authentication > Providers > Phone.
 - **Expiração automática do mural**: um job (Supabase Edge Function agendada,
