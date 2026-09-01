@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAnonAuth } from '@/lib/supabase/useAnonAuth'
 import type { Intention } from '@/lib/types'
@@ -19,6 +20,7 @@ function timeAgo(iso: string) {
 
 export default function Mural() {
   const { userId } = useAnonAuth()
+  const router = useRouter()
   const [items, setItems] = useState<Intention[]>([])
   const [connectingId, setConnectingId] = useState<string | null>(null)
   const [connectedId, setConnectedId] = useState<string | null>(null)
@@ -97,14 +99,20 @@ export default function Mural() {
     }
 
     // 2. Cria a sala de conexão (15 min, já com o horário de término calculado no banco)
-    const { error: roomError } = await supabase.from('rooms').insert({
-      intention_id: intention.id,
-      user_a: intention.user_id,
-      user_b: userId,
-    })
+    const { data: roomData, error: roomError } = await supabase
+      .from('rooms')
+      .insert({
+        intention_id: intention.id,
+        user_a: intention.user_id,
+        user_b: userId,
+      })
+      .select()
+      .single()
 
-    if (roomError) {
-      console.error('Erro ao criar sala:', roomError.message)
+    if (roomError || !roomData) {
+      console.error('Erro ao criar sala:', roomError?.message)
+      setConnectingId(null)
+      return
     }
 
     // 3. Credita Vibe Points pros dois lados
@@ -124,10 +132,9 @@ export default function Mural() {
     await supabase.rpc('claim_cupid_bonus', { p_user_id: userId })
     await supabase.rpc('claim_cupid_bonus', { p_user_id: intention.user_id })
 
-    setConnectingId(null)
     setConnectedId(intention.id)
-    setToast('Sala de 15 min aberta — vocês dois já estão dentro!')
-    setTimeout(() => setToast(null), 3500)
+    setToast('Sala aberta! Te levando pra lá...')
+    setTimeout(() => router.push(`/sala/${roomData.id}`), 900)
   }
 
   async function postIntention(e: FormEvent) {

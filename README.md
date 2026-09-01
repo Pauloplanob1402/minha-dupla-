@@ -93,17 +93,23 @@ lá, só que agora atrelados a um e-mail de verdade.
 
 ## 7. O que ainda falta pra virar produto de verdade
 
-Isso aqui é a fundação técnica — o schema, o mural e o login por e-mail já
-funcionam com dados reais. Ainda faltam, na ordem que eu recomendaria:
+Isso aqui é a fundação técnica — o schema, o mural, o login por e-mail, o
+Modo Cupido e o chat de texto dentro da sala já funcionam com dados reais.
+Ainda faltam, na ordem que eu recomendaria:
 
-- **Sala de áudio de verdade**: integrar Daily.co ou Agora.io na tabela `rooms`
-  pra abrir uma chamada real quando alguém topa a dupla (hoje só cria o registro
-  no banco, sem áudio/chat de fato).
-- **Chat de texto dentro da sala**: uma tabela `messages` ligada a `rooms`, com
-  Realtime igual ao mural.
+- **Áudio de verdade**: integrar Daily.co ou Agora.io na página `/sala/[id]`
+  pra abrir uma chamada real ao lado do chat (hoje só tem texto e emojis).
 - **Login por celular/SMS**: precisa de um provedor externo pago (Twilio,
   MessageBird) configurado em Authentication > Providers > Phone.
 - **Expiração automática do mural**: um job (Supabase Edge Function agendada,
   ou `pg_cron`) que marca intenções com mais de X minutos como `expired`.
 - **Resgate de recompensas**: por enquanto, gerencie manualmente olhando a
   tabela `profiles.vibe_points` e enviando os vouchers na mão.
+
+## Migrações que ainda faltam rodar
+
+Se você já rodou o `schema.sql` original antes, também rode (uma vez cada,
+no SQL Editor do Supabase, na ordem):
+
+1. `supabase/migration-cupid-mode.sql` — bônus em dobro do Modo Cupido.
+2. `supabase/migration-messages.sql` — chat de texto dentro da sala.

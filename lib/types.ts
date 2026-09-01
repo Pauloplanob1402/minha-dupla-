@@ -20,3 +20,21 @@ export type Profile = {
   last_connection_date: string | null
   created_at: string
 }
+
+export type Room = {
+  id: string
+  intention_id: string | null
+  user_a: string
+  user_b: string
+  started_at: string
+  ends_at: string
+  status: 'active' | 'completed' | 'cancelled'
+}
+
+export type Message = {
+  id: string
+  room_id: string
+  user_id: string
+  content: string
+  created_at: string
+}
