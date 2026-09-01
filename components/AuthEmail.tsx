@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAnonAuth } from '@/lib/supabase/useAnonAuth'
 
 export default function AuthEmail() {
-  const { email, isAnonymous, loading } = useAnonAuth()
+  const { email, isAnonymous, loading, refresh } = useAnonAuth()
   const [inputEmail, setInputEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
@@ -23,7 +23,7 @@ export default function AuthEmail() {
     // Se a pessoa já está numa sessão anônima, "linkar" o e-mail preserva
     // o mesmo user_id (e portanto os Vibe Points e o histórico). Se por
     // algum motivo não houver sessão anônima, cai pro login normal.
-    const { error } = isAnonymous
+    const { data, error } = isAnonymous
       ? await supabase.auth.updateUser(
           { email: inputEmail.trim() },
           { emailRedirectTo: redirectTo }
@@ -39,6 +39,17 @@ export default function AuthEmail() {
       setErrorMsg(error.message)
       return
     }
+
+    // Se a confirmação de e-mail estiver desligada no projeto, o Supabase
+    // já aplica o e-mail na hora — sem link nenhum pra clicar. Nesse caso,
+    // "data.user.email" já vem preenchido na resposta, então atualizamos
+    // o estado local direto em vez de mostrar a tela de "te mandamos um link".
+    const alreadyConfirmed = 'user' in data && data.user?.email === inputEmail.trim()
+    if (alreadyConfirmed) {
+      await refresh()
+      return
+    }
+
     setSent(true)
   }
 
