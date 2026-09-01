@@ -9,11 +9,13 @@ import CupidMode from '@/components/CupidMode'
 import Rewards from '@/components/Rewards'
 import Footer from '@/components/Footer'
 import ReferralTracker from '@/components/ReferralTracker'
+import RoomRedirector from '@/components/RoomRedirector'
 
 export default function Home() {
   return (
     <>
       <ReferralTracker />
+      <RoomRedirector />
       <TopBanner />
       <Header />
       <Hero />
