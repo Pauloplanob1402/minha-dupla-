@@ -1,18 +1,21 @@
 'use client'
 
 import { useState } from 'react'
+import { useLiveCount } from '@/lib/supabase/useLiveCount'
 import type { IntentChoice } from '@/lib/types'
 
 const CHOICES: { choice: IntentChoice; label: string; ctaLabel: string; emoji: string; title: string }[] = [
   { choice: 'jogar', label: 'uma partida', ctaLabel: 'uma partida', emoji: '🎮', title: 'Jogar uma partida' },
   { choice: 'estudar', label: 'pra estudar', ctaLabel: 'pra estudar', emoji: '📚', title: 'Estudar / Focar' },
   { choice: 'projeto', label: 'pra criar um projeto', ctaLabel: 'pra criar um projeto', emoji: '💡', title: 'Criar um Projeto' },
+  { choice: 'silencio', label: 'em silêncio', ctaLabel: 'em silêncio', emoji: '🤫', title: 'Sala Silenciosa (só foco)' },
 ]
 
 const DEFAULT_CTA = 'Conectar com Minha Dupla Agora'
 
 export default function Hero({ onSelect }: { onSelect?: (choice: IntentChoice | null) => void }) {
   const [active, setActive] = useState<IntentChoice | null>(null)
+  const liveCount = useLiveCount()
 
   function handleClick(choice: IntentChoice) {
     const next = active === choice ? null : choice
@@ -33,7 +36,13 @@ export default function Hero({ onSelect }: { onSelect?: (choice: IntentChoice | 
         <div className="text-center lg:text-left">
           <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald animate-pulse-ring" />
-            <span className="text-xs font-medium text-zinc-300">2.340 pessoas online agora</span>
+            <span className="text-xs font-medium text-zinc-300">
+              {liveCount === null
+                ? 'Carregando...'
+                : liveCount > 0
+                ? `${liveCount} ${liveCount === 1 ? 'pessoa buscando' : 'pessoas buscando'} dupla agora`
+                : 'Você é um dos primeiros por aqui — chama alguém pra topar'}
+            </span>
           </div>
 
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl leading-[1.08] tracking-tight text-white">
@@ -73,7 +82,7 @@ export default function Hero({ onSelect }: { onSelect?: (choice: IntentChoice | 
               Escolha 1 e comece agora
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
               {CHOICES.map((c) => (
                 <button
                   key={c.choice}
@@ -96,6 +105,7 @@ export default function Hero({ onSelect }: { onSelect?: (choice: IntentChoice | 
                       jogar: 'Achamos 3 pessoas online agora pra um co-op rápido 🎮',
                       estudar: 'Tem gente estudando pra prova agora — bora focar junto 📚',
                       projeto: 'Encontramos gente com ideias parecidas pra trocar figurinha 💡',
+                      silencio: 'Sala sem papo — só presença e foco, do seu lado 🤫',
                     }[active]
                   : 'Escolhe um card pra ver sua dupla mais próxima ✨'}
               </span>

@@ -10,6 +10,7 @@ const CHOICE_EMOJI: Record<string, string> = {
   jogar: '🎮',
   estudar: '📚',
   projeto: '💡',
+  silencio: '🤫',
 }
 
 function timeAgo(iso: string) {
@@ -26,7 +27,7 @@ export default function Mural() {
   const [connectedId, setConnectedId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
-  const [formChoice, setFormChoice] = useState<'jogar' | 'estudar' | 'projeto'>('jogar')
+  const [formChoice, setFormChoice] = useState<'jogar' | 'estudar' | 'projeto' | 'silencio'>('jogar')
   const [formMessage, setFormMessage] = useState('')
   const [formName, setFormName] = useState('')
   const [posting, setPosting] = useState(false)
@@ -181,6 +182,7 @@ export default function Mural() {
           <option value="jogar">🎮 Jogar</option>
           <option value="estudar">📚 Estudar</option>
           <option value="projeto">💡 Projeto</option>
+          <option value="silencio">🤫 Sala Silenciosa</option>
         </select>
         <input
           value={formName}

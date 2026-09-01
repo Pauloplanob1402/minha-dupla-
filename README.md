@@ -140,3 +140,5 @@ no SQL Editor do Supabase, na ordem):
    quando alguém topa a dupla (redirecionamento automático pra sala).
 4. `supabase/migration-chat-media.sql` — fotos e vídeos no chat (cria o
    bucket de armazenamento `chat-media` e as permissões dele).
+5. `supabase/migration-silent-room.sql` — libera a 4ª opção de intenção
+   ("Sala Silenciosa").

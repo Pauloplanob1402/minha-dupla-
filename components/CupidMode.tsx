@@ -12,7 +12,7 @@ export default function CupidMode() {
 
     const url = `${window.location.origin}/?convite=${userId}`
     const text =
-      'Bora fazer dupla comigo no DUOS? Jogar, estudar ou criar algo junto, sem enrolação:'
+      'Grandes histórias começam com uma boa dupla. Bora criar a nossa? Entra no DUOS comigo:'
 
     if (navigator.share) {
       try {

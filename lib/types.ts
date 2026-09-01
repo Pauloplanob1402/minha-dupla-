@@ -1,4 +1,4 @@
-export type IntentChoice = 'jogar' | 'estudar' | 'projeto'
+export type IntentChoice = 'jogar' | 'estudar' | 'projeto' | 'silencio'
 
 export type Intention = {
   id: string

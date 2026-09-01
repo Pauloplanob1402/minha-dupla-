@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAnonAuth } from '@/lib/supabase/useAnonAuth'
 import AudioCall from '@/components/AudioCall'
+import AchievementCard from '@/components/AchievementCard'
 import type { Message, Room } from '@/lib/types'
 
 const QUICK_EMOJIS = ['👍', '😂', '🔥', '❤️', '🎉', '👀']
@@ -54,6 +55,7 @@ export default function RoomPage() {
 
   const [room, setRoom] = useState<Room | null>(null)
   const [otherName, setOtherName] = useState<string | null>(null)
+  const [roomChoice, setRoomChoice] = useState<string | null>(null)
   const [notAllowed, setNotAllowed] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -86,6 +88,15 @@ export default function RoomPage() {
         .eq('id', otherId)
         .single()
       setOtherName(otherProfile?.display_name ?? 'sua dupla')
+
+      if (data.intention_id) {
+        const { data: intentionData } = await supabase
+          .from('intentions')
+          .select('choice')
+          .eq('id', data.intention_id)
+          .single()
+        setRoomChoice(intentionData?.choice ?? null)
+      }
     }
 
     loadRoom()
@@ -228,7 +239,9 @@ export default function RoomPage() {
     <div className="min-h-screen flex flex-col max-w-2xl mx-auto px-4 sm:px-6">
       <header className="flex items-center justify-between py-5 border-b border-white/5">
         <div>
-          <p className="text-xs text-zinc-500">Sala de conexão</p>
+          <p className="text-xs text-zinc-500">
+            {roomChoice === 'silencio' ? 'Sala Silenciosa · só foco' : 'Sala de conexão'}
+          </p>
           <h1 className="font-display font-bold text-white">Você e {otherName}</h1>
         </div>
         <div className={`font-display font-extrabold text-2xl tabular-nums ${timerColor}`}>
@@ -236,7 +249,18 @@ export default function RoomPage() {
         </div>
       </header>
 
-      {!isOver && <AudioCall roomId={room.id} endsAt={room.ends_at} leave={isOver} />}
+      {!isOver && roomChoice !== 'silencio' && (
+        <AudioCall roomId={room.id} endsAt={room.ends_at} leave={isOver} />
+      )}
+
+      {!isOver && roomChoice === 'silencio' && (
+        <div className="flex items-center gap-2 bg-surface border border-white/10 rounded-xl px-4 py-3 mt-4">
+          <span className="w-2 h-2 rounded-full bg-emerald shrink-0" />
+          <p className="text-xs sm:text-sm text-zinc-300">
+            Modo silencioso — sem áudio. Só presença e foco, o chat abaixo é opcional.
+          </p>
+        </div>
+      )}
 
       {isOver && (
         <div className="mt-4 bg-surface border border-white/10 rounded-xl px-4 py-3 text-center text-sm text-zinc-300">
@@ -245,6 +269,10 @@ export default function RoomPage() {
             Voltar pro mural
           </a>
         </div>
+      )}
+
+      {isOver && messages.length > 0 && (
+        <AchievementCard otherName={otherName ?? 'sua dupla'} minutes={15} />
       )}
 
       <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-2">
