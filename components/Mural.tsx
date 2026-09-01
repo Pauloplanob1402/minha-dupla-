@@ -119,6 +119,11 @@ export default function Mural() {
       p_reason: 'Dupla formada a partir do seu pedido',
     })
 
+    // 4. Se algum dos dois foi indicado por alguém (Modo Cupido) e essa é
+    // a primeira dupla dele, credita o bônus em dobro pra quem indicou.
+    await supabase.rpc('claim_cupid_bonus', { p_user_id: userId })
+    await supabase.rpc('claim_cupid_bonus', { p_user_id: intention.user_id })
+
     setConnectingId(null)
     setConnectedId(intention.id)
     setToast('Sala de 15 min aberta — vocês dois já estão dentro!')

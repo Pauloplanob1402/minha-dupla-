@@ -8,10 +8,12 @@ import HowItWorks from '@/components/HowItWorks'
 import CupidMode from '@/components/CupidMode'
 import Rewards from '@/components/Rewards'
 import Footer from '@/components/Footer'
+import ReferralTracker from '@/components/ReferralTracker'
 
 export default function Home() {
   return (
     <>
+      <ReferralTracker />
       <TopBanner />
       <Header />
       <Hero />

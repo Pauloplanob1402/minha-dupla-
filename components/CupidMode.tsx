@@ -1,4 +1,38 @@
+'use client'
+
+import { useState } from 'react'
+import { useAnonAuth } from '@/lib/supabase/useAnonAuth'
+
 export default function CupidMode() {
+  const { userId } = useAnonAuth()
+  const [status, setStatus] = useState<'idle' | 'copied' | 'shared'>('idle')
+
+  async function handleInvite() {
+    if (!userId) return
+
+    const url = `${window.location.origin}/?convite=${userId}`
+    const text =
+      'Bora fazer dupla comigo no DUOS? Jogar, estudar ou criar algo junto, sem enrolação:'
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'DUOS', text, url })
+        setStatus('shared')
+        setTimeout(() => setStatus('idle'), 3000)
+      } catch {
+        // pessoa cancelou o compartilhamento — não faz nada
+      }
+      return
+    }
+
+    await navigator.clipboard.writeText(`${text} ${url}`)
+    setStatus('copied')
+    setTimeout(() => setStatus('idle'), 3000)
+  }
+
+  const buttonLabel =
+    status === 'copied' ? 'Link copiado ✅' : status === 'shared' ? 'Convite enviado 🎉' : null
+
   return (
     <section className="relative z-10 max-w-5xl mx-auto px-6 py-10">
       <div className="relative cupid-gradient border border-pink/30 rounded-3xl p-6 sm:p-8 overflow-hidden shadow-xl">
@@ -21,10 +55,18 @@ export default function CupidMode() {
 
           <button
             type="button"
-            className="w-full sm:w-auto shrink-0 bg-white hover:bg-zinc-100 text-base font-bold text-black px-5 py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2"
+            onClick={handleInvite}
+            disabled={!userId}
+            className="w-full sm:w-auto shrink-0 bg-white hover:bg-zinc-100 text-base font-bold text-black px-5 py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
           >
-            <span className="text-pink">→</span>
-            <span>Enviar Convite Secreto</span>
+            {buttonLabel ? (
+              <span>{buttonLabel}</span>
+            ) : (
+              <>
+                <span className="text-pink">→</span>
+                <span>Enviar Convite Secreto</span>
+              </>
+            )}
           </button>
         </div>
 
