@@ -55,7 +55,7 @@ grava de verdade no banco.
    usuários ganham 20 Vibe Points (confira na tabela `points_transactions` no
    Supabase), e uma linha nova aparece em `rooms`.
 
-## 5. Habilitar o login por e-mail (magic link)
+## 4. Habilitar o login por e-mail (magic link)
 
 O código já está pronto (formulário "Salvar meus pontos" logo abaixo do Hero),
 mas falta uma configuração no painel do Supabase pra ela funcionar:
@@ -77,6 +77,23 @@ Supabase manda um link mágico; ao clicar, a sessão anônima vira permanente
 com o **mesmo user_id** — ou seja, os Vibe Points e o histórico continuam
 lá, só que agora atrelados a um e-mail de verdade.
 
+## 5. Habilitar o áudio da sala (Daily.co)
+
+1. Crie uma conta grátis em [daily.co](https://daily.co) (10.000 minutos de
+   participante grátis por mês, sem cartão de crédito).
+2. Vá em **Developers** no painel do Daily e copie a **API Key**.
+3. Adicione essa chave como `DAILY_API_KEY` no seu `.env.local` (local) e
+   nas Environment Variables da Vercel (produção) — **sem** o prefixo
+   `NEXT_PUBLIC_`, já que ela precisa ficar só no servidor.
+4. Redeploy na Vercel depois de adicionar a variável lá.
+
+Como funciona: quando a página da sala carrega, ela chama a rota
+`/api/daily-room` (que roda no servidor), que cria (ou reaproveita) uma
+sala de áudio no Daily com o mesmo tempo de expiração da sala do DUOS.
+O áudio conecta sozinho, sem precisar clicar em nada — só aparece um
+aviso "Conectando áudio..." que vira "Áudio conectado 🎙️" quando os dois
+estão dentro. O botão ao lado deixa mutar/desmutar o microfone.
+
 ## 6. Deploy na Vercel
 
 1. Suba este projeto pra um repositório no GitHub (`git init`, `git add .`,
@@ -94,11 +111,12 @@ lá, só que agora atrelados a um e-mail de verdade.
 ## 7. O que ainda falta pra virar produto de verdade
 
 Isso aqui é a fundação técnica — o schema, o mural, o login por e-mail, o
-Modo Cupido e o chat de texto dentro da sala já funcionam com dados reais.
-Ainda faltam, na ordem que eu recomendaria:
+Modo Cupido, o chat de texto com fotos/vídeos e o áudio da sala já
+funcionam com dados reais. Ainda faltam, na ordem que eu recomendaria:
 
-- **Áudio de verdade**: integrar Daily.co ou Agora.io na página `/sala/[id]`
-  pra abrir uma chamada real ao lado do chat (hoje só tem texto e emojis).
+- **Vídeo (câmera)**: o Daily já está conectado só em modo áudio
+  (`startVideoOff: true`). Ativar a câmera é só um ajuste de configuração
+  no `AudioCall.tsx` e adicionar o elemento de vídeo na tela.
 - **Login por celular/SMS**: precisa de um provedor externo pago (Twilio,
   MessageBird) configurado em Authentication > Providers > Phone.
 - **Expiração automática do mural**: um job (Supabase Edge Function agendada,

@@ -17,6 +17,7 @@ on conflict (id) do nothing;
 
 -- Só quem participa da sala pode enviar arquivo pra ela.
 -- (os arquivos são salvos com o caminho "room_id/nome-do-arquivo")
+drop policy if exists "Participantes podem enviar mídia da própria sala" on storage.objects;
 create policy "Participantes podem enviar mídia da própria sala"
   on storage.objects for insert
   with check (
@@ -30,6 +31,7 @@ create policy "Participantes podem enviar mídia da própria sala"
 
 -- Bucket é público, então qualquer um com o link vê a mídia (necessário
 -- pra renderizar a imagem/vídeo na tela sem precisar de token).
+drop policy if exists "Mídia do chat é pública pra leitura" on storage.objects;
 create policy "Mídia do chat é pública pra leitura"
   on storage.objects for select
   using (bucket_id = 'chat-media');

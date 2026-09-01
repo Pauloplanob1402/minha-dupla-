@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent 
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAnonAuth } from '@/lib/supabase/useAnonAuth'
+import AudioCall from '@/components/AudioCall'
 import type { Message, Room } from '@/lib/types'
 
 const QUICK_EMOJIS = ['👍', '😂', '🔥', '❤️', '🎉', '👀']
@@ -234,6 +235,8 @@ export default function RoomPage() {
           {countdown}
         </div>
       </header>
+
+      {!isOver && <AudioCall roomId={room.id} endsAt={room.ends_at} leave={isOver} />}
 
       {isOver && (
         <div className="mt-4 bg-surface border border-white/10 rounded-xl px-4 py-3 text-center text-sm text-zinc-300">
