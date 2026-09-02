@@ -47,7 +47,12 @@ export default function AchievementCard({
         className="w-full max-w-xs mx-auto aspect-[9/16] rounded-3xl p-6 flex flex-col justify-between"
         style={{ background: 'linear-gradient(160deg, #8B5CF6 0%, #EC4899 100%)' }}
       >
-        <span className="text-white font-extrabold text-xl tracking-tight">DUOS</span>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-lg">
+            🤝
+          </div>
+          <span className="text-white font-extrabold text-xl tracking-tight">DUOS</span>
+        </div>
         <div>
           <p className="text-white/80 text-xs uppercase tracking-wider mb-1">Conquista de hoje</p>
           <p className="text-white font-extrabold text-2xl leading-tight">

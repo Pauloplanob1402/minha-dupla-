@@ -15,12 +15,25 @@ const DEFAULT_CTA = 'Conectar com Minha Dupla Agora'
 
 export default function Hero({ onSelect }: { onSelect?: (choice: IntentChoice | null) => void }) {
   const [active, setActive] = useState<IntentChoice | null>(null)
+  const [searching, setSearching] = useState(false)
   const liveCount = useLiveCount()
 
   function handleClick(choice: IntentChoice) {
     const next = active === choice ? null : choice
     setActive(next)
     onSelect?.(next)
+  }
+
+  function handleMainCta() {
+    if (searching) return
+    setSearching(true)
+    // Micro-pausa intencional: dá a sensação de que o app está de fato
+    // procurando sua dupla, antes de rolar pro mural onde os pedidos
+    // reais já estão esperando. Nenhum dado é inventado — é só ritmo de UI.
+    setTimeout(() => {
+      setSearching(false)
+      document.getElementById('mural')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 900)
   }
 
   const ctaText = active
@@ -60,9 +73,20 @@ export default function Hero({ onSelect }: { onSelect?: (choice: IntentChoice | 
           <div className="mt-8 flex flex-col sm:flex-row justify-center lg:justify-start gap-3">
             <button
               type="button"
-              className="cta-gradient hover:scale-105 transition-transform flex items-center justify-center gap-2 text-white font-bold text-base px-7 py-4 rounded-2xl ring-1 ring-white/10"
+              onClick={handleMainCta}
+              disabled={searching}
+              className="cta-gradient hover:scale-105 transition-transform flex items-center justify-center gap-2 text-white font-bold text-base px-7 py-4 rounded-2xl ring-1 ring-white/10 disabled:opacity-90"
             >
-              ⚡ <span>{ctaText}</span>
+              {searching ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span>Buscando sua dupla ideal...</span>
+                </>
+              ) : (
+                <>
+                  ⚡ <span>{ctaText}</span>
+                </>
+              )}
             </button>
             <a
               href="#recompensas"

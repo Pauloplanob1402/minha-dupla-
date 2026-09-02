@@ -16,8 +16,16 @@ const CHOICE_EMOJI: Record<string, string> = {
 function timeAgo(iso: string) {
   const diffMin = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000))
   if (diffMin < 1) return 'agora mesmo'
-  return `há ${diffMin} min`
+  if (diffMin < 60) return `há ${diffMin} min`
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24) return `há ${diffHours}h`
+  const diffDays = Math.floor(diffHours / 24)
+  return `há ${diffDays}d`
 }
+
+// Só considera "ao vivo" pedidos postados nas últimas 2 horas — sem isso,
+// um post de teste feito ontem continuaria aparecendo pra sempre no mural.
+const MURAL_FRESHNESS_HOURS = 2
 
 export default function Mural() {
   const { userId } = useAnonAuth()
@@ -31,15 +39,18 @@ export default function Mural() {
   const [formMessage, setFormMessage] = useState('')
   const [formName, setFormName] = useState('')
   const [posting, setPosting] = useState(false)
+  const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
 
     async function load() {
+      const freshSince = new Date(Date.now() - MURAL_FRESHNESS_HOURS * 60 * 60 * 1000).toISOString()
       const { data, error } = await supabase
         .from('intentions')
         .select('*')
         .eq('status', 'open')
+        .gte('created_at', freshSince)
         .order('created_at', { ascending: false })
         .limit(10)
 
@@ -78,6 +89,16 @@ export default function Mural() {
     return () => {
       supabase.removeChannel(channel)
     }
+  }, [])
+
+  // Remove da tela pedidos que "envelheceram" além do limite de frescor,
+  // caso a aba fique aberta por muito tempo sem refresh.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const cutoff = Date.now() - MURAL_FRESHNESS_HOURS * 60 * 60 * 1000
+      setItems((prev) => prev.filter((item) => new Date(item.created_at).getTime() >= cutoff))
+    }, 60000)
+    return () => clearInterval(interval)
   }, [])
 
   async function toparDupla(intention: Intention) {
@@ -182,54 +203,63 @@ export default function Mural() {
       console.error('Erro ao postar intenção:', error.message)
     } else {
       setFormMessage('')
+      setShowForm(false)
     }
     setPosting(false)
   }
 
   return (
-    <section className="relative z-10 max-w-5xl mx-auto px-6 pb-16">
+    <section id="mural" className="relative z-10 max-w-5xl mx-auto px-6 pb-16">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-bold text-lg text-white flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald animate-pulse-ring" />
           Pedidos ao vivo
         </h2>
-        <span className="text-xs text-zinc-500">atualizando agora</span>
+        <button
+          type="button"
+          onClick={() => setShowForm((v) => !v)}
+          className="text-xs font-semibold text-violet hover:text-white transition-colors shrink-0"
+        >
+          {showForm ? 'Cancelar' : '+ Postar meu pedido'}
+        </button>
       </div>
 
-      <form
-        onSubmit={postIntention}
-        className="flex flex-col sm:flex-row gap-2 mb-4 bg-surface border border-white/10 rounded-xl p-3"
-      >
-        <select
-          value={formChoice}
-          onChange={(e) => setFormChoice(e.target.value as typeof formChoice)}
-          className="bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white shrink-0"
+      {showForm && (
+        <form
+          onSubmit={postIntention}
+          className="flex flex-col sm:flex-row gap-2 mb-4 bg-surface border border-white/10 rounded-xl p-3"
         >
-          <option value="jogar">🎮 Jogar</option>
-          <option value="estudar">📚 Estudar</option>
-          <option value="projeto">💡 Projeto</option>
-          <option value="silencio">🤫 Sala Silenciosa</option>
-        </select>
-        <input
-          value={formName}
-          onChange={(e) => setFormName(e.target.value)}
-          placeholder="Seu nome"
-          className="bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white w-full sm:w-32 shrink-0"
-        />
-        <input
-          value={formMessage}
-          onChange={(e) => setFormMessage(e.target.value)}
-          placeholder="O que você quer fazer agora?"
-          className="flex-1 bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-        />
-        <button
-          type="submit"
-          disabled={!userId || posting || !formMessage.trim()}
-          className="cta-gradient text-white text-sm font-semibold rounded-lg px-4 py-2 shrink-0 disabled:opacity-50"
-        >
-          {posting ? 'Postando...' : 'Postar'}
-        </button>
-      </form>
+          <select
+            value={formChoice}
+            onChange={(e) => setFormChoice(e.target.value as typeof formChoice)}
+            className="bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white shrink-0"
+          >
+            <option value="jogar">🎮 Jogar</option>
+            <option value="estudar">📚 Estudar</option>
+            <option value="projeto">💡 Projeto</option>
+            <option value="silencio">🤫 Sala Silenciosa</option>
+          </select>
+          <input
+            value={formName}
+            onChange={(e) => setFormName(e.target.value)}
+            placeholder="Seu nome"
+            className="bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white w-full sm:w-32 shrink-0"
+          />
+          <input
+            value={formMessage}
+            onChange={(e) => setFormMessage(e.target.value)}
+            placeholder="O que você quer fazer agora?"
+            className="flex-1 bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          />
+          <button
+            type="submit"
+            disabled={!userId || posting || !formMessage.trim()}
+            className="cta-gradient text-white text-sm font-semibold rounded-lg px-4 py-2 shrink-0 disabled:opacity-50"
+          >
+            {posting ? 'Postando...' : 'Postar'}
+          </button>
+        </form>
+      )}
 
       <div className="flex flex-col gap-3">
         {items.length === 0 && (
