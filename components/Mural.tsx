@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAnonAuth } from '@/lib/supabase/useAnonAuth'
@@ -40,25 +40,39 @@ export default function Mural() {
   const [formName, setFormName] = useState('')
   const [posting, setPosting] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const blockedIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
+    if (!userId) return
     const supabase = createClient()
 
     async function load() {
       const freshSince = new Date(Date.now() - MURAL_FRESHNESS_HOURS * 60 * 60 * 1000).toISOString()
+
+      // Busca quem esse usuário já bloqueou, pra nunca mostrar os pedidos
+      // dessas pessoas no mural.
+      const { data: blockData } = await supabase
+        .from('blocks')
+        .select('blocked_id')
+        .eq('blocker_id', userId)
+      const blockedSet = new Set((blockData ?? []).map((b) => b.blocked_id))
+      blockedIdsRef.current = blockedSet
+
       const { data, error } = await supabase
         .from('intentions')
         .select('*')
         .eq('status', 'open')
         .gte('created_at', freshSince)
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(20)
 
       if (error) {
         console.error('Erro ao carregar mural:', error.message)
         return
       }
-      if (data) setItems(data as Intention[])
+      if (data) {
+        setItems((data as Intention[]).filter((i) => !blockedSet.has(i.user_id)).slice(0, 10))
+      }
     }
 
     load()
@@ -71,7 +85,9 @@ export default function Mural() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'intentions' },
         (payload) => {
-          setItems((prev) => [payload.new as Intention, ...prev].slice(0, 10))
+          const newItem = payload.new as Intention
+          if (blockedIdsRef.current.has(newItem.user_id)) return
+          setItems((prev) => [newItem, ...prev].slice(0, 10))
         }
       )
       .on(
@@ -89,7 +105,7 @@ export default function Mural() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [userId])
 
   // Remove da tela pedidos que "envelheceram" além do limite de frescor,
   // caso a aba fique aberta por muito tempo sem refresh.

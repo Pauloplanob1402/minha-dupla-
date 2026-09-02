@@ -3,10 +3,10 @@ export default function Footer() {
     <footer className="relative z-10 border-t border-white/5">
       <div className="max-w-3xl mx-auto px-6 py-8 flex flex-col items-center gap-3 text-center">
         <div className="flex items-center gap-5 text-xs text-zinc-500">
-          <a href="#" className="hover:text-zinc-300 transition-colors">
+          <a href="/termos" className="hover:text-zinc-300 transition-colors">
             Termos de Uso
           </a>
-          <a href="#" className="hover:text-zinc-300 transition-colors">
+          <a href="/privacidade" className="hover:text-zinc-300 transition-colors">
             Privacidade
           </a>
         </div>

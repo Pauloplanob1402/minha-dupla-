@@ -57,6 +57,10 @@ export default function RoomPage() {
   const [otherName, setOtherName] = useState<string | null>(null)
   const [roomChoice, setRoomChoice] = useState<string | null>(null)
   const [notAllowed, setNotAllowed] = useState(false)
+  const [showReportPanel, setShowReportPanel] = useState(false)
+  const [reportReason, setReportReason] = useState('Comportamento inadequado')
+  const [reportSubmitting, setReportSubmitting] = useState(false)
+  const [reportDone, setReportDone] = useState<'report' | 'block' | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -157,6 +161,28 @@ export default function RoomPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
+  async function handleReport(alsoBlock: boolean) {
+    if (!userId || !room || reportSubmitting) return
+    const otherId = room.user_a === userId ? room.user_b : room.user_a
+    setReportSubmitting(true)
+
+    const supabase = createClient()
+    await supabase.from('reports').insert({
+      reporter_id: userId,
+      reported_id: otherId,
+      room_id: room.id,
+      reason: reportReason,
+    })
+
+    if (alsoBlock) {
+      await supabase.from('blocks').insert({ blocker_id: userId, blocked_id: otherId })
+    }
+
+    setReportSubmitting(false)
+    setReportDone(alsoBlock ? 'block' : 'report')
+    setShowReportPanel(false)
+  }
+
   async function sendMessage(content: string, messageType: 'text' | 'image' | 'video' = 'text') {
     if (!userId || !content.trim() || isOver) return
     const supabase = createClient()
@@ -244,10 +270,65 @@ export default function RoomPage() {
           </p>
           <h1 className="font-display font-bold text-white">Você e {otherName}</h1>
         </div>
-        <div className={`font-display font-extrabold text-2xl tabular-nums ${timerColor}`}>
-          {countdown}
+        <div className="flex items-center gap-3">
+          <div className={`font-display font-extrabold text-2xl tabular-nums ${timerColor}`}>
+            {countdown}
+          </div>
+          {!reportDone && (
+            <button
+              type="button"
+              onClick={() => setShowReportPanel((v) => !v)}
+              title="Denunciar ou bloquear"
+              className="text-zinc-500 hover:text-pink transition-colors text-lg"
+            >
+              ⚠️
+            </button>
+          )}
         </div>
       </header>
+
+      {reportDone && (
+        <div className="mt-4 bg-surface border border-emerald/30 rounded-xl px-4 py-3 text-center text-sm text-zinc-300">
+          {reportDone === 'block'
+            ? 'Denúncia enviada e essa pessoa foi bloqueada — vocês não vão mais se cruzar no mural.'
+            : 'Denúncia enviada. Obrigado por avisar — vamos analisar.'}
+        </div>
+      )}
+
+      {showReportPanel && !reportDone && (
+        <div className="mt-4 bg-surface border border-pink/30 rounded-xl p-4">
+          <p className="text-sm text-white font-semibold mb-3">Denunciar {otherName}</p>
+          <select
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            className="w-full bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white mb-3"
+          >
+            <option>Comportamento inadequado</option>
+            <option>Assédio ou ameaça</option>
+            <option>Conteúdo impróprio</option>
+            <option>Spam ou golpe</option>
+            <option>Outro motivo</option>
+          </select>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={() => handleReport(false)}
+              disabled={reportSubmitting}
+              className="flex-1 text-xs font-semibold text-white border border-white/20 rounded-lg px-3 py-2.5 hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              Só denunciar
+            </button>
+            <button
+              type="button"
+              onClick={() => handleReport(true)}
+              disabled={reportSubmitting}
+              className="flex-1 text-xs font-semibold text-white bg-pink/90 hover:bg-pink rounded-lg px-3 py-2.5 transition-colors disabled:opacity-50"
+            >
+              Denunciar e bloquear
+            </button>
+          </div>
+        </div>
+      )}
 
       {!isOver && roomChoice !== 'silencio' && (
         <AudioCall roomId={room.id} endsAt={room.ends_at} leave={isOver} />

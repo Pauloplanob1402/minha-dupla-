@@ -142,3 +142,4 @@ no SQL Editor do Supabase, na ordem):
    bucket de armazenamento `chat-media` e as permissões dele).
 5. `supabase/migration-silent-room.sql` — libera a 4ª opção de intenção
    ("Sala Silenciosa").
+6. `supabase/migration-reports-blocks.sql` — denúncia e bloqueio de usuários.
