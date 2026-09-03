@@ -234,9 +234,9 @@ export default function Mural() {
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="text-xs font-semibold text-violet hover:text-white transition-colors shrink-0"
+          className="shrink-0 text-xs font-semibold text-white bg-violet/20 hover:bg-violet/30 border border-violet/50 rounded-full px-4 py-2 transition-colors"
         >
-          {showForm ? 'Cancelar' : '+ Postar meu pedido'}
+          {showForm ? '✕ Cancelar' : '+ Postar meu pedido'}
         </button>
       </div>
 

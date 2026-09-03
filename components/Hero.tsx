@@ -108,7 +108,7 @@ export default function Hero({ onSelect }: { onSelect?: (choice: IntentChoice | 
               Escolha 1 e comece agora
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-2 gap-3 mb-5">
               {CHOICES.map((c) => (
                 <button
                   key={c.choice}
